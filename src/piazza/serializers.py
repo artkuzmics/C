@@ -5,7 +5,7 @@ from .models import Post, Comment, Like, Dislike, Topic
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ('id','post','topic')
+        fields = ('post','topic')
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,12 +15,12 @@ class CommentSerializer(serializers.ModelSerializer):
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
-        fields = ['id','author','post']
+        fields = ['author','post']
 
 class DislikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dislike
-        fields = ['id','author','post']
+        fields = ['author','post']
 
 class PostSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True)

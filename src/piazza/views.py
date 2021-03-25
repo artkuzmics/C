@@ -12,6 +12,32 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework.parsers import JSONParser
 from django.http import HttpResponse, JsonResponse
 
+
+@api_view(['GET'])
+def wall_by_topic(request,query):
+    if request.method == 'GET':
+
+        print('get')
+        print(request.user)
+        print(request.user.id)
+        print(request.headers)
+
+        posts = Post.objects.all()
+
+        posts_by_topic = []
+        for post in posts:
+            topics = Topic.objects.filter(post=post.id)
+            for topic in topics:
+                print(topic.topic.lower(), query.lower())
+                if topic.topic.lower() == query.lower():
+                    posts_by_topic.append(post)
+
+        serializer = PostSerializer(posts_by_topic, many=True)
+
+        return Response(serializer.data)
+
+
+
 @api_view(['GET','POST'])
 def wall_posts(request):
     """
@@ -36,8 +62,6 @@ def wall_posts(request):
         data = request.data
         data = json.loads(data)
         data['author'] = request.user.id
-
-
 
         print(data)
         serializer = PostSerializer(data=data)
@@ -158,9 +182,3 @@ def dislike(request,id):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-@api_view(['GET'])
-def wall_by_topic(request,topic):
-    pass
