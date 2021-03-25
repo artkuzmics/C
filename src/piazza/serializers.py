@@ -37,7 +37,7 @@ class PostSerializer(serializers.ModelSerializer):
 
         for topic in topics:
             print(topic)
-            Topics.objects.create(
+            Topic.objects.create(
                     post=post,
                     **topic
                     )
