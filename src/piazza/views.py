@@ -13,6 +13,20 @@ from rest_framework.parsers import JSONParser
 from django.http import HttpResponse, JsonResponse
 
 
+def sort_by_topic(posts, query):
+    activity = []
+    posts_by_topic = []
+    for post in posts:
+        topics = Topic.objects.filter(post=post.id)
+        for topic in topics:
+            print(topic.topic.lower(), query.lower())
+            if topic.topic.lower() == query.lower():
+                posts_by_topic.append(post)
+                activity.append(post.likes.count()+post.dislikes.count())
+    return posts_by_topic, activity
+
+
+
 @api_view(['GET'])
 def wall_by_topic(request,query):
     if request.method == 'GET':
@@ -23,17 +37,22 @@ def wall_by_topic(request,query):
         print(request.headers)
 
         posts = Post.objects.all()
-
-        posts_by_topic = []
-        for post in posts:
-            topics = Topic.objects.filter(post=post.id)
-            for topic in topics:
-                print(topic.topic.lower(), query.lower())
-                if topic.topic.lower() == query.lower():
-                    posts_by_topic.append(post)
-
+        posts_by_topic, activity = sort_by_topic(posts, query)
         serializer = PostSerializer(posts_by_topic, many=True)
+        return Response(serializer.data)
 
+
+@api_view(['GET'])
+def active(request,query):
+    if request.method == 'GET':
+        posts = Post.objects.all()
+        posts_by_topic, activity = sort_by_topic(posts, query)
+
+        max_value = max(activity)
+        max_indices = [i for i, j in enumerate(activity) if j == max_value]
+        active_topics = [posts_by_topic[i] for i in max_indices]
+
+        serializer = PostSerializer(active_topics, many=True)
         return Response(serializer.data)
 
 
@@ -61,7 +80,7 @@ def wall_posts(request):
         print('post')
         data = request.data
         data = json.loads(data)
-        data['author'] = request.user.id
+        data['author_id'] = request.user.id
 
         print(data)
         serializer = PostSerializer(data=data)
@@ -103,19 +122,25 @@ def comments(request,id):
     comments_count = post.comments.count()
     print(comments_count)
 
+    print(post.islive)
+
     if request.method == 'GET':
         comment_serializer = CommentSerializer(comments, many=True)
         return Response(comment_serializer.data)
 
     elif request.method == 'POST':
-        data = request.POST.copy()
-        data['post'] = post.id
-        data['author'] = request.user.id
-        serializer = CommentSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if post.islive:
+            data = request.POST.copy()
+            data['post'] = post.id
+            data['author'] = request.user.id
+            serializer = CommentSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                print(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Put correct code!
+        return Response({'error':'post expired'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET','PUT'])
 def like(request,id):
@@ -126,27 +151,30 @@ def like(request,id):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        data = request.data.copy()
-        data['post'] = post.id
-        data['author'] = request.user.id
+        if post.islive:
+            if request.user.id == post.author_id.id:
+                return Response({'error':'cannot like your own message'}, status=status.HTTP_400_BAD_REQUEST)
+            data = request.data.copy()
+            data['post'] = post.id
+            data['author'] = request.user.id
+            try:
+                dislike = Dislike.objects.get(post__id=post.id, author__username=request.user.username)
+                dislike.delete()
+                print("dislike deleted")
+            except Dislike.DoesNotExist:
+                print("no dislike found")
+            try:
+                like = Like.objects.get(post__id=post.id, author__username=request.user.username)
+                serializer = LikeSerializer(like, data=data)
+            except Like.DoesNotExist:
+                serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Put correct code!
+        return Response({'error':'post expired'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            dislike = Dislike.objects.get(post__id=post.id, author__username=request.user.username)
-            dislike.delete()
-            print("dislike deleted")
-        except Dislike.DoesNotExist:
-            print("no dislike found")
-
-        try:
-            like = Like.objects.get(post__id=post.id, author__username=request.user.username)
-            serializer = LikeSerializer(like, data=data)
-        except Like.DoesNotExist:
-            serializer = LikeSerializer(data=data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET','PUT'])
 def dislike(request,id):
@@ -157,28 +185,27 @@ def dislike(request,id):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        data = request.data.copy()
-        data['post'] = post.id
-        data['author'] = request.user.id
+        if post.islive:
+            if request.user.id == post.author_id.id:
+                return Response({'error':'cannot dislike your own message'}, status=status.HTTP_400_BAD_REQUEST)
+            data = request.data.copy()
+            data['post'] = post.id
+            data['author'] = request.user.id
+            try:
+                like = Like.objects.get(post__id=post.id, author__username=request.user.username)
+                like.delete()
+                print("like deleted")
+            except Like.DoesNotExist:
+                print("no like found")
+            try:
+                dislike = Dislike.objects.get(post__id=post.id, author__username=request.user.username)
+                serializer = DislikeSerializer(dislike, data=data)
+            except Dislike.DoesNotExist:
+                serializer = DislikeSerializer(data=data)
 
-        try:
-            like = Like.objects.get(post__id=post.id, author__username=request.user.username)
-            like.delete()
-            print("like deleted")
-        except Like.DoesNotExist:
-            print("no like found")
-
-
-        try:
-            dislike = Dislike.objects.get(post__id=post.id, author__username=request.user.username)
-            serializer = DislikeSerializer(dislike, data=data)
-        except Dislike.DoesNotExist:
-            serializer = DislikeSerializer(data=data)
-
-
-
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Put correct code!
+        return Response({'error':'post expired'}, status=status.HTTP_400_BAD_REQUEST)

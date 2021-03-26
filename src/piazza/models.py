@@ -6,15 +6,11 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 class Post(models.Model):
-    timestamp = models.DateTimeField(default=timezone.now)
-    expiration = models.DateTimeField(default=timezone.now()+timedelta(minutes=5))
+    title = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now())
     body = models.TextField()
     title = models.CharField(max_length=250)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_author')
-    #topics = TaggableManager()
-
-    class Meta:
-        ordering = ('-timestamp',)
+    author_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_author')
 
     def __str__(self):
         return self.body[:100]
@@ -26,12 +22,24 @@ class Post(models.Model):
         return self.id
 
     @property
-    def livestatus(self):
+    def expiration(self):
+        return self.timestamp + timedelta(minutes=20)
+
+    @property
+    def islive(self):
+
         now = timezone.now()
-        #print(now, self.expiration)
+        print(now,self.expiration)
         if now > self.expiration:
             return False
         else: return True
+
+    @property
+    def author(self):
+        return User.objects.get(id=self.author_id.id).username
+
+    class Meta:
+        ordering = ('-timestamp',)
 
 
 

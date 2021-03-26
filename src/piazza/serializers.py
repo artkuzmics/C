@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Post, Comment, Like, Dislike, Topic
 
+TOPICS = ('health', 'sport', 'politics', 'tech')
 
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,17 +30,16 @@ class PostSerializer(serializers.ModelSerializer):
     dislikes = DislikeSerializer(many=True, read_only=True, required=False)
     class Meta:
         model = Post
-        fields = ('id','author','body','timestamp','livestatus','topics','comments','likes','dislikes')
+        fields = ('author','author_id','title','body','timestamp','expiration','islive','topics','comments','likes','dislikes')
 
     def create(self, validated_data):
         topics = validated_data.pop('topics')
         post = Post.objects.create(**validated_data)
 
         for topic in topics:
-            print(topic)
-            Topic.objects.create(
-                    post=post,
-                    **topic
-                    )
-        print('returned:',post.topics)
+            if dict(topic)['topic'].lower() in TOPICS:
+                Topic.objects.create(
+                            post=post,
+                            **topic
+                            )
         return post
