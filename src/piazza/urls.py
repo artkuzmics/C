@@ -3,12 +3,13 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('',views.wall_posts),
-    path('<str:query>',views.wall_by_topic),
-    path('<str:query>/active',views.active),
-    path('<int:id>',views.post),
-    path('<int:id>/comments',views.comments),
-    path('<int:id>/like',views.like),
-    path('<int:id>/dislike',views.dislike),
+    path('posts/',views.posts),
+    path('posts/<int:id>',views.post),
+    path('posts/<int:id>/comments',views.comments),
+    path('posts/<int:id>/likes',views.likes),
+    path('posts/<int:id>/dislikes',views.dislikes),
+    path('posts/topics/<str:topic>',views.topics),
+    #path('posts/topics/<str:topic>/active',views.topics_active),
+    #path('posts/topics/<str:topic>/expired',views.topics_active),
+    #path('posts/topics/<str:topic>/active/best-ranked',views.topics_active_bestranked),
 ]
-# Create your tests here.

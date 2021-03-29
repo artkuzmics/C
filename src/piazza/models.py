@@ -9,7 +9,6 @@ class Post(models.Model):
     title = models.TextField()
     timestamp = models.DateTimeField(default=timezone.now())
     body = models.TextField()
-    title = models.CharField(max_length=250)
     author_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_author')
 
     def __str__(self):
@@ -27,9 +26,7 @@ class Post(models.Model):
 
     @property
     def islive(self):
-
         now = timezone.now()
-        print(now,self.expiration)
         if now > self.expiration:
             return False
         else: return True
@@ -41,27 +38,9 @@ class Post(models.Model):
     class Meta:
         ordering = ('-timestamp',)
 
-
-
-
 class Topic(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='topics', null=True, blank=True)
     topic = models.CharField(max_length=250)
-
-
-"""
-class Topic(models.Model):
-    TOPICS = (
-        ('Politics','politics'),
-        ('Health','health'),
-        ('Sport','sport'),
-        ('Tech','tech'),
-    )
-    topic = models.CharField(max_length=10,choices=TOPICS)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE,related_name="topic")
-    def __str__(self):
-        return self.topic
-"""
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE,related_name="comments")
@@ -74,7 +53,6 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.author} on {self.post}'
-
 
 class Like(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE,related_name="likes")

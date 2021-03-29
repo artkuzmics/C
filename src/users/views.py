@@ -20,9 +20,6 @@ def register(request):
     Registers user to the server. Input should be in the format:
     {"username": "username", "password": "1234abcd"}
     '''
-
-    print(request.data)
-
     # Put the data from the request into the serializer
     serializer = CreateUserSerializer(data=request.data)
     # Validate the data
