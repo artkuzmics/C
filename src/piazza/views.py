@@ -103,7 +103,7 @@ def comments(request,id):
         return Response({'error':'post expired'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @api_view(['GET','PUT'])
-def likes(request,id,reaction):
+def likes(request,id):
     post = get_object_or_404(Post, id=id)
 
     if request.method == 'GET':
