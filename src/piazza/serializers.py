@@ -11,17 +11,17 @@ class TopicSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['author','body','post','created']
+        fields = ('author','author_id','body','post','created')
 
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
-        fields = ['author','post']
+        fields = ('author','author_id','post')
 
 class DislikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dislike
-        fields = ['author','post']
+        fields = ('author','author_id','post')
 
 class PostSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True)
@@ -30,7 +30,7 @@ class PostSerializer(serializers.ModelSerializer):
     dislikes = DislikeSerializer(many=True, read_only=True, required=False)
     class Meta:
         model = Post
-        fields = ('author','author_id','title','body','timestamp','expiration','islive','topics','comments','likes','dislikes')
+        fields = ('id','author','author_id','title','body','timestamp','expiration','islive','topics','comments','likes','dislikes')
 
     def create(self, validated_data):
         topics = validated_data.pop('topics')

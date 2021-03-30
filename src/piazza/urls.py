@@ -4,12 +4,11 @@ from . import views
 
 urlpatterns = [
     path('posts',views.posts),
-    path('posts/<int:id>',views.post),
-    path('posts/<int:id>/comments',views.comments),
-    path('posts/<int:id>/likes',views.likes),
-    path('posts/<int:id>/dislikes',views.dislikes),
-    path('posts/topics/<str:topic>',views.topics),
-    #path('posts/topics/<str:topic>/active',views.topics_active),
-    #path('posts/topics/<str:topic>/expired',views.topics_active),
-    #path('posts/topics/<str:topic>/active/best-ranked',views.topics_active_bestranked),
+    path('posts/<int:pk>',views.post.as_view()),
+    path('posts/<int:pk>/comments',views.comments),
+    path('posts/<int:pk>/likes',views.likes),
+    path('posts/<int:pk>/dislikes',views.dislikes),
+    path('posts/topics/<str:topic>',views.filter.as_view()),
+    path('posts/topics/<str:topic>/<str:status>',views.filter.as_view()),
+    path('posts/topics/<str:topic>/<str:status>/<str:rank>',views.filter.as_view()),
 ]
